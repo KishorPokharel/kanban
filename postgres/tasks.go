@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/lib/pq"
@@ -12,9 +11,12 @@ import (
 
 var ErrInvalidData = errors.New("invalid task id or source index or destination index")
 
+var categories = []string{"TODO", "IN PROGRESS", "TESTING", "DONE"}
+
 type Task struct {
 	ID        int64     `json:"id"`
 	UserID    int64     `json:"user_id,omitempty"`
+	Category  string    `json:"category"`
 	Content   string    `json:"content"`
 	CreatedAt time.Time `json:"created_at"`
 }
@@ -23,26 +25,35 @@ type TaskService struct {
 	DB *sql.DB
 }
 
-// TODO: modify this
-func (ts TaskService) GetAll(userID int64) ([]Task, error) {
+func (ts TaskService) GetAll(userID int64) (map[string][]Task, error) {
 	query := `
-        select x.id, content, created_at 
+        select x.id, tasks.category, content, created_at 
         from taskorder, unnest(value)
         with ordinality as x(id)
         join tasks on tasks.id = x.id where tasks.user_id = $1;
     `
 	rows, err := ts.DB.Query(query, userID)
 	if err != nil {
-		return []Task{}, err
+		return map[string][]Task{}, err
 	}
-	tasks := []Task{}
+
+	tasks := map[string][]Task{}
+	for _, val := range categories {
+		tasks[val] = []Task{}
+	}
+
 	for rows.Next() {
 		task := Task{}
-		rows.Scan(&task.ID, &task.Content, &task.CreatedAt)
-		tasks = append(tasks, task)
+		rows.Scan(&task.ID, &task.Category, &task.Content, &task.CreatedAt)
+		_, ok := tasks[task.Category]
+		if !ok {
+			tasks[task.Category] = []Task{task}
+			continue
+		}
+		tasks[task.Category] = append(tasks[task.Category], task)
 	}
 	if err := rows.Close(); err != nil {
-		return []Task{}, err
+		return map[string][]Task{}, err
 	}
 	return tasks, nil
 }
@@ -188,12 +199,22 @@ func (ts TaskService) SortTaskInDifferentCategory(
 		destinationIDs = append(destinationIDs, newDestinationIDs[destinationIndex:]...)
 	}
 
-	fmt.Println(destinationIDs)
 	argsQueryUpdateDestination := []any{pq.Array(&destinationIDs), userID, destinationCategory}
 	_, err = tx.Exec(queryUpdate, argsQueryUpdateDestination...)
 	if err != nil {
 		return err
 	}
+
+	queryUpdateTasks := `
+        update tasks
+        set category = $1
+        where id = $2
+    `
+	_, err = tx.Exec(queryUpdateTasks, destinationCategory, taskID)
+	if err != nil {
+		return err
+	}
+
 	if err := tx.Commit(); err != nil {
 		return err
 	}

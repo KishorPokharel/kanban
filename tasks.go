@@ -10,7 +10,6 @@ import (
 	validator "github.com/go-ozzo/ozzo-validation/v4"
 )
 
-// TODO: modify this
 func (app *application) handleTasksGet(w http.ResponseWriter, r *http.Request) {
 	user := app.contextGetUser(r)
 	tasks, err := app.service.Task.GetAll(user.ID)
@@ -84,15 +83,8 @@ type sortInput struct {
 	DestinationIndex    int64  `json:"destination_index"`
 }
 
-// TODO: modify this
 func (app *application) handleTaskSort(w http.ResponseWriter, r *http.Request) {
-	input := struct {
-		TaskID              int64  `json:"task_id"`
-		SourceCategory      string `json:"source_category"`
-		SourceIndex         int64  `json:"source_index"`
-		DestinationCategory string `json:"destination_category"`
-		DestinationIndex    int64  `json:"destination_index"`
-	}{}
+	input := sortInput{}
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		app.errorResponse(
 			w,
