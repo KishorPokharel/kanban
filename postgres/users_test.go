@@ -4,13 +4,11 @@ import "testing"
 
 func TestUserCreate(t *testing.T) {
 	tests := []struct {
-		name      string
 		password  string
 		user      *User
 		wantError error
 	}{
 		{
-			name:     "New user should be created",
 			password: "kishor123",
 			user: &User{
 				Username: "kishor",
@@ -19,7 +17,6 @@ func TestUserCreate(t *testing.T) {
 			wantError: nil,
 		},
 		{
-			name:     "New user should be created",
 			password: "bibek123",
 			user: &User{
 				Username: "bibek",
@@ -34,16 +31,14 @@ func TestUserCreate(t *testing.T) {
 
 	service := NewService(db)
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tt.user.Password.Set(tt.password)
-			err := service.User.Create(tt.user)
-			if err != tt.wantError {
-				t.Errorf("want %v; got %s", tt.wantError, err)
-			}
-			if tt.user.ID <= 0 {
-				t.Errorf("new user id <= 0, got id = %d", tt.user.ID)
-			}
-		})
+		tt.user.Password.Set(tt.password)
+		err := service.User.Create(tt.user)
+		if err != tt.wantError {
+			t.Errorf("want %v; got %s", tt.wantError, err)
+		}
+		if tt.user.ID <= 0 {
+			t.Errorf("new user id <= 0, got id = %d", tt.user.ID)
+		}
 	}
 }
 

@@ -81,3 +81,62 @@ func TestSortTaskInSameCategory(t *testing.T) {
 		t.Errorf("sort in same category failed, got = %v, want = %v", got, want)
 	}
 }
+
+func TestSortTaskInDifferentCategory(t *testing.T) {
+	db, tear := newTestDB(t)
+	defer tear()
+	service := NewService(db)
+
+	pwd := "kishor123"
+	user := &User{
+		Username: "kishor",
+		Email:    "kishor@gmail.com",
+	}
+	user.Password.Set(pwd)
+	if err := service.User.Create(user); err != nil {
+		t.Fatal(err)
+	}
+
+	tasks := []*Task{
+		{UserID: user.ID, Content: "A"},
+		{UserID: user.ID, Content: "B"},
+		{UserID: user.ID, Content: "C"},
+		{UserID: user.ID, Content: "D"},
+	}
+	wantInTodo := []string{"A", "C", "D"}
+	gotInTodo := []string{}
+	wantInTesting := []string{"B"}
+	gotInTesting := []string{}
+	for _, task := range tasks {
+		if err := service.Task.Insert(task); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := service.Task.SortTaskInDifferentCategory(
+		user.ID, tasks[1].ID, 1, 0, "TODO", "TESTING",
+	); err != nil {
+		t.Fatal(err)
+	}
+	allTasks, err := service.Task.GetAll(user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	val, ok := allTasks["TODO"]
+	if ok {
+		for _, t := range val {
+			gotInTodo = append(gotInTodo, t.Content)
+		}
+	}
+	if !reflect.DeepEqual(gotInTodo, wantInTodo) {
+		t.Errorf("sort in different category failed, got = %v, want = %v", gotInTodo, wantInTodo)
+	}
+	val, ok = allTasks["TESTING"]
+	if ok {
+		for _, t := range val {
+			gotInTesting = append(gotInTesting, t.Content)
+		}
+	}
+	if !reflect.DeepEqual(gotInTesting, wantInTesting) {
+		t.Errorf("sort in different category failed, got = %v, want = %v", gotInTesting, wantInTesting)
+	}
+}
