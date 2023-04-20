@@ -61,7 +61,7 @@ func (ts TaskService) GetAll(userID int64) (map[string][]Task, error) {
 func (ts TaskService) Insert(task *Task) error {
 	queryInsertTask := `
         insert into tasks (user_id, content)
-        values ($1, $2) returning id, created_at
+        values ($1, $2) returning id, category, created_at
     `
 	args := []any{task.UserID, task.Content}
 	tx, err := ts.DB.Begin()
@@ -70,7 +70,7 @@ func (ts TaskService) Insert(task *Task) error {
 	}
 	defer tx.Rollback()
 	taskRow := tx.QueryRowContext(context.Background(), queryInsertTask, args...)
-	err = taskRow.Scan(&task.ID, &task.CreatedAt)
+	err = taskRow.Scan(&task.ID, &task.Category, &task.CreatedAt)
 	if err != nil {
 		return err
 	}
