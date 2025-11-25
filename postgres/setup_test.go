@@ -2,7 +2,7 @@ package postgres
 
 import (
 	"database/sql"
-	"io/ioutil"
+	"os"
 	"testing"
 )
 
@@ -14,7 +14,7 @@ func newTestDB(t *testing.T) (*sql.DB, func()) {
 		t.Fatal(err)
 	}
 
-	script, err := ioutil.ReadFile("../sql/setup.sql")
+	script, err := os.ReadFile("../sql/setup.sql")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -24,7 +24,7 @@ func newTestDB(t *testing.T) (*sql.DB, func()) {
 	}
 
 	return db, func() {
-		script, err := ioutil.ReadFile("../sql/setup_reverse.sql")
+		script, err := os.ReadFile("../sql/setup_reverse.sql")
 		if err != nil {
 			t.Fatal(err)
 		}
