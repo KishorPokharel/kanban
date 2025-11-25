@@ -1,0 +1,1 @@
+export KANBAN_DB_DSN="postgres://localhost:5432/kanban?sslmode=disable"

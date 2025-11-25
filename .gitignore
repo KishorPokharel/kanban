@@ -1,2 +1,4 @@
 kanban
 *.swp
+.envrc
+bin/
